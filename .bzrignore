@@ -1,0 +1,16 @@
+./secretkey.py
+__pycache__
+./.cache
+./archive
+.swg
+.swh
+.swi
+.swj
+.swk
+.swl
+.swm
+.swn
+.swo
+.swp
+.swpx
+./db.sqlite

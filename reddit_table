@@ -1,0 +1,230 @@
+# tabledresser - a reddit bot that turns AMAs into tables
+# Copyright (C) 2012  Yann Kaiser
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+#!/usr/bin/python
+
+from __future__ import print_function, unicode_literals
+
+from clize import clize, run
+
+
+@clize
+def ama(url):
+    """Collect Q&As from the given url and outputs them in reddit
+    table format.
+
+    url: The AMA url. With or without .json suffix
+
+    """
+    from tablemaker.shortcuts import make_r_iama_table
+    from tablemaker.redditapi import get_reddit, login
+    from tablemaker.outputs import linesep
+
+    r = get_reddit()
+    login()
+    r.get_submission(url=url)
+    linesep(
+        make_r_iama_table(
+            r.get_submission(url=url)),
+        limit=float('inf'),
+        )
+
+@clize
+def postama(url, no_r_tabled=False, no_comment=False, dry_run=False):
+    """Create a table for the given AMA and submit it
+
+    The comment is kept in a database so the original comments may be
+    updated.
+
+    url: the url to read from
+
+    no_r_tabled: Don't post the result on r/tabled
+
+    no_comment: Don't post the result as a comment
+
+    dry_run: Don't post anywhere, output result on stdout
+    """
+
+    from tablemaker.shortcuts import post_or_update_ama
+    from tablemaker.redditapi import login
+    from tablemaker.loop import run as runloop
+
+    login()
+    post_or_update_ama(url, no_comment, no_r_tabled, dry_run, trust=10)
+
+    runloop()
+
+@clize
+def crawl(min_comments=50, min_comments_submit=200, refuse_pm=False):
+    """Crawls IAmA and regularily updates posts
+
+    min_comments: Minimum comments made on the AMA for it to be auto-crawled
+
+    min_comments_submit: Minimum comments made on the AMA for a crosspost to r/tabled
+
+    refuse_pm: Refuse to handle PM'd crawl requests
+    """
+
+    from itertools import chain
+
+    from tablemaker.loop import run as runloop, rs, enter, ratelimit
+    from tablemaker.redditapi import login
+    from tablemaker_orm.models import TrackedTable
+    from tablemaker.shortcuts import post_ama_from_loop, post_ama_from_pm, top_iama, read_messages
+
+    rs.stop_when_empty = False
+
+    login()
+
+    def read_pm():
+        for type, ama, message in read_messages():
+            if type == 'ama':
+                print("Will follow", ama)
+                ratelimit(post_ama_from_pm, ama, message, _delay=3)
+            else:
+                print("Don't know what to do with", type, ama, message)
+
+    def read_subreddits():
+        for ama in top_iama():
+            print("Will visit", ama.permalink)
+            ratelimit(post_ama_from_loop, ama, trust=8, _delay=3)
+
+    def update_existing():
+        for tt in chain(
+                TrackedTable.objects.hourly(),
+                TrackedTable.objects.sixhourly()
+                ):
+            print("Will update", tt.get_parent_url())
+            ratelimit(post_ama_from_loop, tt.get_parent_url(), trust=9, _delay=3)
+
+    def routine():
+        update_existing()
+        if not refuse_pm:
+            read_pm()
+        ratelimit(read_subreddits)
+
+        enter(10*60, 0, routine, ())
+
+    enter(0, 0, routine, ())
+
+    runloop()
+
+@clize
+def authors(link, clear=False, *authors):
+    """Sets or lists the authors for a particular AMA
+
+    link: link to the submission to edit
+
+    authors: the list of usernames deemed as authors of the AMA
+
+    clear: clear the authors for this submission?
+
+    """
+    from tablemaker.redditapi import reddit_re
+    from tablemaker_orm.models import SpecialRequest, REQUEST_TYPE_AUTHORS
+
+    if '/' in link:
+        link = reddit_re.match(link).group('id')
+
+    if clear:
+        SpecialRequest.objects.filter(
+            parent=link, type=REQUEST_TYPE_AUTHORS).delete()
+        print('Cleared authors for submission {0}'.format(link))
+    elif not authors:
+        try:
+            authors = SpecialRequest.objects.get(parent=link).get_data()
+        except SpecialRequest.DoesNotExist:
+            print('No authors set for submission {0}'.format(link))
+        else:
+            print('Authors for submission {0} are: {1}'.format(
+                link, ' '.join(authors)))
+    else:
+        req = SpecialRequest(parent=link, type=REQUEST_TYPE_AUTHORS)
+        req.set_data(authors)
+        req.save()
+        print('Authors for submission {0} are now: {1}'.format(
+            link, ' '.join(authors)
+            ))
+
+@clize
+def donottable(link, unset=False, check=False):
+    """Prevents an AMA from being tabled
+
+    link: A link to the AMA.
+
+    unset: Allow an AMA to be tabled
+
+    check: Only check if an AMA is prevented from being tabled or not"""
+
+    from tablemaker.redditapi import reddit_re
+    from tablemaker_orm.models import SpecialRequest, REQUEST_TYPE_DELETE
+
+    if unset and check:
+        print("Cannot use --check and --unset together.")
+        return
+
+    if '/' in link:
+        link = reddit_re.match(link).group('id')
+
+    sr = SpecialRequest.objects.filter(
+        parent=link, type=REQUEST_TYPE_DELETE)
+
+    if unset:
+        sr.delete()
+        print("Submission {0} may be tabled again.".format(link))
+    elif check:
+        if sr.exists():
+            print("Submission {0} will never be tabled.".format(link))
+        else:
+            print("Submission {0} may be tabled.".format(link))
+    else:
+        if not sr.exists():
+            SpecialRequest(parent=link, type=REQUEST_TYPE_DELETE).save()
+        print("Submission {0} may not be tabled anymore.".format(link))
+
+@clize
+def test(question, answer):
+    """Outputs a table with only one Q/A as source
+
+    question: the full question post text
+
+    answer: the full answer post text
+
+    You can use quotes to encapsulate each post. You may use python
+    character escapes.
+    """
+    from tablemaker.outputs import linesep
+    from tablemaker.redditfilters import QandA_splitquestions, QandA_formatter, fake_comment
+    from tablemaker.markdown.writers import table
+
+    question_ = fake_comment(question.decode('unicode_escape'))
+    answer_ = fake_comment(answer.decode('unicode_escape'))
+
+    linesep(
+        table(
+            ('Questions', 'Answers'), (-1, -1),
+            QandA_formatter(
+                QandA_splitquestions(
+                        ((question_, answer_),)
+                    )
+                )
+            )
+        )
+
+if __name__ == '__main__':
+    run((ama, postama, crawl, authors, donottable, test))
+
