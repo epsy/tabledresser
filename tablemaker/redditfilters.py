@@ -294,7 +294,7 @@ def is_thank_block(block):
         return False
     txt = block.lower()
     for word in (
-            'thank', 'love', 'welcome', 'hey', 'hi', 'hello'
+            'thank', 'love', 'welcome', 'hi', 'hello'
             'question', 'good',
             ):
         if word in txt:
