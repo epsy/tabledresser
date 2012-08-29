@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # tabledresser - a reddit bot that turns AMAs into tables
 # Copyright (C) 2012  Yann Kaiser
 #
@@ -23,11 +24,16 @@ from clize import clize, run
 
 
 @clize
-def ama(url):
+def ama(url, no_login=False, file=False):
     """Collect Q&As from the given url and outputs them in reddit
     table format.
 
     url: The AMA url. With or without .json suffix
+
+    no_login: Don't attempt to log in. Logged in users don't get the
+    cached version of hot posts.
+
+    file: url is in fact a local file that is a json feed
 
     """
     from tablemaker.shortcuts import make_r_iama_table
@@ -35,11 +41,21 @@ def ama(url):
     from tablemaker.outputs import linesep
 
     r = get_reddit()
-    login()
-    r.get_submission(url=url)
+
+    if file or not no_login:
+        login()
+
+    if file:
+        from json import load
+        s_info, c_info = load(open(url), object_hook=r._json_reddit_objecter)
+        submission = s_info['data']['children'][0]
+        submission.comments = c_info['data']['children']
+    else:
+        submission = r.get_submission(url=url)
+
     linesep(
         make_r_iama_table(
-            r.get_submission(url=url)),
+            submission),
         limit=float('inf'),
         )
 

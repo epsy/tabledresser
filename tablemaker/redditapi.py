@@ -62,6 +62,8 @@ def login():
     r = get_reddit()
     if not r.user:
         r.login(**get_login_info())
+        if not r.user:
+            print("Uh! I'm still not logged in!")
 
 def get_login_info():
     return load(open(os.path.expanduser('~/.reddit'), 'r'))

@@ -213,7 +213,7 @@ def post_or_update_ama(url, no_comment=False,
 
     table = list(make_r_iama_table(submission))
 
-    if len(table) < 15: # this ama is crap/not an ama/author deleted
+    if trust < 10 and len(table) < 15: # this ama is crap/not an ama/author deleted
         try:
             tt = TrackedTable.objects.get(parent=submission.id)
             tt.edited = datetime.utcnow()
