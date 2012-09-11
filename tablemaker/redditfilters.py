@@ -309,6 +309,7 @@ def remove_thank_blocks(blocks):
 def unescape_entities(text):
     return HTMLParser.unescape.__func__(HTMLParser, text)
 
+repeat_re = re.compile("(?P<char>.)(?P=char){3,}")
 def reformat(body_):
     body = body_.lstrip(' .,-;/!?')
     if not body:
@@ -317,7 +318,7 @@ def reformat(body_):
         body += '.'
     if body[0].islower():
         body = body[0].upper() + body[1:]
-    return body
+    return repeat_re.sub('\g<char>\g<char>\g<char>', body)
 
 def remove_bad_prefixes(body):
     lower = body.lower()
