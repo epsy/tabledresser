@@ -25,6 +25,7 @@ except ImportError:
 from datetime import datetime, timedelta
 from time import time
 from functools import wraps
+from itertools import chain
 
 from reddit import errors
 
@@ -290,11 +291,12 @@ def read_messages():
                 yield "verification", link, message
             people[author] = linksleft - 1
 
-def top_iama(subreddit='iama'):
+def top_iama(subreddits=('iama','internetama')):
     r = get_reddit()
-    sub = r.get_subreddit(subreddit)
     return iama_filter(
-        remove_tracked(
-            sub.get_top(limit=25),
-            )
+        remove_tracked(chain(
+            *[
+                r.get_subreddit(subreddit).get_top(limit=25)
+                for subreddit in subreddits
+            ]))
         )
