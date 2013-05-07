@@ -112,9 +112,10 @@ def QandA_sort_votecount(iterable):
         return score
     return sorted(iterable, key=key_fn, reverse=True)
 
-def is_blockquote_attempt(phrase):
+def is_blockquote_attempt(phrase, rphrase):
     return (
         phrase.startswith('>')
+        or rphrase.startswith('    ')
         or phrase.startswith('*') and phrase.endswith('*')
         or phrase.startswith('"') and phrase.endswith('"')
         )
@@ -142,8 +143,8 @@ def QandA_splitquestions(iterable):
         last_quote = False
         q_ = []
         a_ = []
-        for phrase in (phrase_.strip() for phrase_ in a):
-            if is_blockquote_attempt(phrase):
+        for phrase, rphrase in ((phrase_.strip(), phrase_) for phrase_ in a):
+            if is_blockquote_attempt(phrase, rphrase):
                 phrase = phrase.lstrip('*> "').rstrip(' *"')
                 if phrase in q or phrase in question.body:
                     if last_quote:
