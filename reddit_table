@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 # tabledresser - a reddit bot that turns AMAs into tables
 # Copyright (C) 2012  Yann Kaiser
 #

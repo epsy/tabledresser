@@ -26,9 +26,18 @@ def link_sub(repl, text):
 blocksplit_re = re.compile(
     r'''
         (
-            (?:^(?!\n)|\n+)\s*(?:[0-9]+\.\s|\*\s|(?=>))
+            (?:^(?!\n)|\n+)\s*(?:[0-9]+\.\s|\*\s|(?=>|\ {4}))
            |(?:^(?!\n)|\n\n+|\s{2,}\n+)(?!\s*(?:[0-9]\.\ |\*\s|>))
         )''', re.X)
+
+def extra_block_split(sep, block):
+    if block.startswith('    '):
+        code, sep_, rest = block.partition('\n')
+        if sep:
+            yield sep, code
+            yield sep_, rest
+            return
+    yield sep, block
 
 def blocks(text):
     sep = ''
@@ -37,7 +46,8 @@ def blocks(text):
             sep = block_or_sep
         else:
             if sep or block_or_sep:
-                yield sep, block_or_sep
+                for sep_, block in extra_block_split(sep, block_or_sep):
+                    yield sep_, block
             sep = None
 
 def blocks_nosep(text):
