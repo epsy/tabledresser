@@ -288,11 +288,7 @@ def new_messages():
     r = get_reddit()
     login()
 
-    for message in r.user.get_messages():
-        if message.new:
-            yield message
-        else:
-            return
+    return r.user.get_unread()
 
 def read_messages():
     r = get_reddit()
