@@ -182,7 +182,9 @@ def edit(thing_id, text, subreddit=None):
     r = get_reddit()
     url = r.config['edit']
     data = {'thing_id': thing_id,
-            'text': text}
+            'text': text,
+            'r': subreddit
+            }
     response = r.request_json(url, data=data)
     r.evict(r.config['user'])
     return response['data']['things'][0]
