@@ -322,7 +322,7 @@ def top_iama(subreddits=('iama','internetama')):
     return iama_filter(
         remove_tracked(chain(
             *[
-                r.get_subreddit(subreddit).get_top(limit=25)
+                r.get_subreddit(subreddit).get_hot(limit=25)
                 for subreddit in subreddits
             ]))
         )
