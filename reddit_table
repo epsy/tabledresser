@@ -130,7 +130,7 @@ def crawl(refuse_pm=False):
             read_pm()
         ratelimit(read_subreddits)
 
-        enter(10*60, 0, routine, ())
+        enter(5*60, 0, routine, ())
 
     enter(0, 0, routine, ())
 
