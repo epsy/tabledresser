@@ -83,6 +83,8 @@ def last_updated(tt):
         )
 
 def post_table_comment(submission, table, tt, dry_run=False, cb=None):
+    r = get_reddit()
+
     msg = StringIO()
     linesep(
         table,
@@ -108,7 +110,7 @@ def post_table_comment(submission, table, tt, dry_run=False, cb=None):
     else:
         if tt.comment:
             if tt.comment != '_':
-                ratelimit(edit, 't1_' + tt.comment, msg.getvalue())
+                edit('t1_' + tt.comment, msg.getvalue())
         else:
             def make_comment():
                 try:
@@ -173,15 +175,15 @@ def post_table_submission(submission, table, tt, dry_run=False, cb=None):
         print('--- END SUBMISSION ---')
     else:
         if tt.submission:
-            ratelimit(edit, 't3_' + tt.submission, msg.getvalue(), 'tabled')
+            edit('t3_' + tt.submission, msg.getvalue(), 'tabled')
             if cb:
                 cb()
         else:
             def submit_to_tabled():
                 link = submit(
+                    'tabled',
                     submissiontitle(submission),
-                    msg.getvalue(),
-                    'tabled')
+                    msg.getvalue())
                 tt.submission = link
                 tt.save()
                 print("Submission link:", tt.get_submission_url('tabled'))
@@ -251,8 +253,6 @@ def post_or_update_ama(url, no_comment=False,
         tt = TrackedTable(parent=submission.id)
         tt.last_answer = datetime.utcfromtimestamp(last_answer_time)
         tt.started = tt.edited = datetime.utcnow()
-
-    print(last_answer.fullname)
 
     if not dry_run:
         tt.save()

@@ -32,6 +32,7 @@ import re
 import json
 
 from praw import Reddit, errors as rerrors
+from praw.objects import Editable
 
 from tablemaker.loop import ratelimit
 
@@ -125,8 +126,9 @@ def get_login_info():
 #         return ''
 #     return data
 # 
-def submit(title, text, subreddit, captsol=None, is_link=False):
+def submit(subreddit, title, text=None, url=None, captsol=None):
     r = get_reddit()
+    return r.submit(subreddit, title, text, url, captsol).id
     body = {
         'title': title,
         'sr': subreddit,
@@ -141,6 +143,7 @@ def submit(title, text, subreddit, captsol=None, is_link=False):
         body['text'] = text
     if captsol:
         body['iden'], body['captcha'] = captsol
+
     content = r._request(submit_url, body)
     try:
         f = loads(content.decode('utf-8'))
@@ -166,29 +169,36 @@ def submit(title, text, subreddit, captsol=None, is_link=False):
         #    raise rerrors.RateLimitExceeded('RATELIMIT', limit)
         #return reddit_re.match(link).group('id')
 
-def edit(thing_id, text, subreddit=None):
-    login()
-    r = get_reddit()
-    body = {
-            'thing_id': thing_id,
-            'text': text,
-            'uh': r.modhash,
-            'api_type': 'json',
-        }
-    if subreddit:
-        body['r'] = subreddit
-    response = r._request(edit_url, body)
-    try:
-        f = json.loads(response.decode('utf-8'))
-        if f['json']['errors']:
-            return True
-        else:
-            return False
-    except:
-        traceback.print_exc()
-    print('Got edit response:', response)
-    return True
+class IdThing(Editable):
+    def __init__(self, fullname, subreddit=None):
+        self.fullname = fullname
 
+def edit(thing_id, text, subreddit=None):
+    return IdThing(thing_id, subreddit).edit(text)
+
+#def edit(thing_id, text, subreddit=None):
+#    login()
+#    r = get_reddit()
+#    body = {
+#            'thing_id': thing_id,
+#            'text': text,
+#            'uh': r.modhash,
+#            'api_type': 'json',
+#        }
+#    if subreddit:
+#        body['r'] = subreddit
+#    response = r._request(edit_url, body)
+#    try:
+#        f = json.loads(response.decode('utf-8'))
+#        if f['json']['errors']:
+#            return True
+#        else:
+#            return False
+#    except:
+#        traceback.print_exc()
+#    print('Got edit response:', response)
+#    return True
+#
 # def get_pms():
 #     headers = {}
 #     set_cookie(headers)
