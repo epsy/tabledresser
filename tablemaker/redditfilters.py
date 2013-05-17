@@ -409,7 +409,7 @@ def remove_tracked(submissions):
         if not TrackedTable.objects.filter(parent=submission.id).exists():
             yield submission
 
-def iama_filter(submissions, age=12*60*60, comments=100):
+def iama_filter(submissions, age=2*60*60, comments=100):
     now = time()
     for submission in submissions:
         if not hasattr(submission.author, 'name'): #author probably deleted the post
