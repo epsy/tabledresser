@@ -288,7 +288,7 @@ def new_messages():
     r = get_reddit()
     login()
 
-    return r.user.get_unread()
+    return r.get_unread(limit=None)
 
 def read_messages():
     r = get_reddit()
