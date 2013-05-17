@@ -169,12 +169,23 @@ def submit(subreddit, title, text=None, url=None, captsol=None):
         #    raise rerrors.RateLimitExceeded('RATELIMIT', limit)
         #return reddit_re.match(link).group('id')
 
-class IdThing(Editable):
-    def __init__(self, fullname, subreddit=None):
-        self.fullname = fullname
+#class IdThing(Editable):
+#    def __init__(self, fullname, subreddit=None):
+#        self._populated = self._populate({'fullname': fullname}, False)
+#        print(self._populated)
+#
+#def edit(thing_id, text, subreddit=None):
+#    return IdThing(thing_id, subreddit).edit(text)
 
 def edit(thing_id, text, subreddit=None):
-    return IdThing(thing_id, subreddit).edit(text)
+    login()
+    r = get_reddit()
+    url = r.config['edit']
+    data = {'thing_id': thing_id,
+            'text': text}
+    response = r.request_json(url, data=data)
+    r.evict(r.config['user'])
+    return response['data']['things'][0]
 
 #def edit(thing_id, text, subreddit=None):
 #    login()
