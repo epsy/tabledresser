@@ -27,7 +27,7 @@ from time import time
 from functools import wraps
 from itertools import chain
 
-from reddit import errors
+from praw import errors
 
 from tablemaker.inputs import redditlink, cachedredditlink
 from tablemaker.redditfilters import (
@@ -45,28 +45,34 @@ from tablemaker_orm.models import (
     REQUEST_TYPE_DELETE, REQUEST_TYPE_AUTHORS,
     )
 
-def make_r_iama_table(submission):
+def grab_questions(submission):
     authors = None
     for request in SpecialRequest.objects.filter(parent=submission.id):
         if request.type == REQUEST_TYPE_DELETE:
             return []
         elif request.type == REQUEST_TYPE_AUTHORS:
             authors = request.get_data()
+    return QandA_grab(
+        submission,
+        answers_from_usernames=authors
+        )
+
+def table_questions(questions_answers):
     return table(
         ('Questions', 'Answers'), (-1, -1),
         QandA_formatter(
             QandA_splitquestions(
                 QandA_sort_votecount(
                     QandA_merge(
-                        QandA_grab(
-                            submission,
-                            answers_from_usernames=authors
-                            )
+                            questions_answers
                         )
                     )
                 )
             )
         )
+
+def make_r_iama_table(submission):
+    return table_questions(grab_questions(submission))
 
 def last_updated(tt):
     next_update = tt.get_next_update()
@@ -188,7 +194,16 @@ def post_ama_from_pm(url, message):
     if ret:
         print('Would tell', message.author, errtext)
 
-min_age = 12*60*60
+MIN_AGE_TABLE = 2 * 60 * 60
+
+def old_enough_for_table(created):
+    return created < time() - MIN_AGE_TABLE
+
+MIN_AGE_COMMENT = 4 * 60 * 60
+MIN_LAST_AGE_COMMENT = 1 * 60 * 60
+def old_enough_for_comment(created, last_answer):
+    return (created < time() - MIN_AGE_COMMENT
+        and last_answer < time() - MIN_LAST_AGE_COMMENT)
 
 def post_or_update_ama(url, no_comment=False,
                        no_r_tabled=False, dry_run=False,
@@ -209,10 +224,12 @@ def post_or_update_ama(url, no_comment=False,
             ):
         return -1, "Title does not sound like an AMA."
 
-    if trust < 5 and submission.created_utc > time() - min_age:
+    if trust < 5 and old_enough_for_table(submission.created_utc):
         return -1, "As per /r/tabled rules, AMAs may only be tabled 12 hours after they started."
 
-    table = list(make_r_iama_table(submission))
+    qa = list(grab_questions(submission))
+
+    table = list(table_questions(qa))
 
     if trust < 10 and len(table) < 15: # this ama is crap/not an ama/author deleted
         try:
@@ -223,18 +240,27 @@ def post_or_update_ama(url, no_comment=False,
             pass
         return -1, "Less than 15 question/answers."
 
+    last_answer = max(qa, key=lambda (q,a): a.created_utc)[1]
+    last_answer_time = last_answer.created_utc
+
     try:
         tt = TrackedTable.objects.get(parent=submission.id)
         tt.edited = datetime.utcnow()
+        tt.last_answer = datetime.utcfromtimestamp(last_answer_time)
     except TrackedTable.DoesNotExist:
         tt = TrackedTable(parent=submission.id)
+        tt.last_answer = datetime.utcfromtimestamp(last_answer_time)
         tt.started = tt.edited = datetime.utcnow()
+
+    print(last_answer.fullname)
 
     if not dry_run:
         tt.save()
 
     def cb():
-        if not no_comment:
+        if not no_comment and (
+                old_enough_for_comment(submission.created_utc, last_answer_time)
+                or tt.comment):
             post_table_comment(submission, table, tt, dry_run)
 
     if not no_r_tabled:

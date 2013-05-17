@@ -85,12 +85,8 @@ def postama(url, no_r_tabled=False, no_comment=False, dry_run=False):
     runloop()
 
 @clize
-def crawl(min_comments=50, min_comments_submit=200, refuse_pm=False):
+def crawl(refuse_pm=False):
     """Crawls IAmA and regularily updates posts
-
-    min_comments: Minimum comments made on the AMA for it to be auto-crawled
-
-    min_comments_submit: Minimum comments made on the AMA for a crosspost to r/tabled
 
     refuse_pm: Refuse to handle PM'd crawl requests
     """
@@ -121,6 +117,7 @@ def crawl(min_comments=50, min_comments_submit=200, refuse_pm=False):
 
     def update_existing():
         for tt in chain(
+                TrackedTable.objects.ongoing(),
                 TrackedTable.objects.hourly(),
                 TrackedTable.objects.sixhourly()
                 ):

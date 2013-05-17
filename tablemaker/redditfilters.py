@@ -82,14 +82,14 @@ def QandA_grab(submission, answers_from_usernames=None):
 def QandA_merge(iterable):
     qa = OrderedDict()
     for parent, message in iterable:
-        if parent.content_id not in qa:
-            qa[parent.content_id] = (parent, [message])
+        if parent.fullname not in qa:
+            qa[parent.fullname] = (parent, [message])
         else:
-            for message_ in qa[parent.content_id][1]:
+            for message_ in qa[parent.fullname][1]:
                 if message_.body == message.body:
                     break
             else:
-                qa[parent.content_id][1].append(message)
+                qa[parent.fullname][1].append(message)
     for parent, messages in qa.values():
         messages.sort(key=lambda x: x.created_utc)
         messages[0].body = '\n\n'.join(message.body for message in messages)
@@ -108,7 +108,7 @@ def QandA_sort_votecount(iterable):
                 * log(len(message.body)) * message.ups
                 * log(2 ** parent.body.count('?'))
                 )
-        answers[message.content_id] = score
+        answers[message.fullname] = score
         return score
     return sorted(iterable, key=key_fn, reverse=True)
 
@@ -409,7 +409,7 @@ def remove_tracked(submissions):
         if not TrackedTable.objects.filter(parent=submission.id).exists():
             yield submission
 
-def iama_filter(submissions, age=12*60*60, comments=200):
+def iama_filter(submissions, age=12*60*60, comments=100):
     now = time()
     for submission in submissions:
         if not hasattr(submission.author, 'name'): #author probably deleted the post

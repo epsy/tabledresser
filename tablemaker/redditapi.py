@@ -31,7 +31,7 @@ import subprocess
 import re
 import json
 
-from reddit import Reddit, errors as rerrors
+from praw import Reddit, errors as rerrors
 
 from tablemaker.loop import ratelimit
 

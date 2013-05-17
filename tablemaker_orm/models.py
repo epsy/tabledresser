@@ -12,10 +12,19 @@ class TableManager(models.Manager):
     def xly(self, oldest, newest, period):
         now = datetime.utcnow()
         return self.filter(
+            last_answer__lt=now - timedelta(hours=1),
             started__gte=now - timedelta(**oldest),
             started__lt=now - timedelta(**newest),
             edited__lte=now - timedelta(**period),
             )
+
+    def ongoing(self):
+        now = datetime.utcnow()
+        return self.filter(
+            last_answer__gte=now - timedelta(hours=1),
+            edited__lte=now - timedelta(minutes=10),
+            )
+
     def hourly(self):
         return self.xly(
                 {'days': 1},
@@ -38,15 +47,19 @@ class TrackedTable(models.Model):
     submission = models.CharField(max_length=6)
     started = models.DateTimeField()
     edited = models.DateTimeField()
+    last_answer = models.DateTimeField()
 
     def __unicode__(self):
         return self.parent
 
     def get_next_update(self):
+        nextongoing = self.edited + timedelta(minutes=10)
         nexthourly = self.edited + timedelta(hours=1)
         nextsixhourly = self.edited + timedelta(hours=6)
 
-        if nexthourly < self.started + timedelta(days=1):
+        if nextongoing < self.last_answer + timedelta(hours=1):
+            return nextongoing
+        elif nexthourly < self.started + timedelta(days=1):
             return nexthourly
         elif nextsixhourly < self.started + timedelta(days=4):
             return nextsixhourly

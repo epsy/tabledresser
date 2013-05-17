@@ -21,7 +21,7 @@ import sched
 import time
 import traceback
 import sys
-from reddit.errors import RateLimitExceeded
+from praw.errors import RateLimitExceeded
 from collections import namedtuple
 
 RedditAction = namedtuple('RedditAction', ('fn', 'args', 'kwargs', 'attempts', 'delay'))
