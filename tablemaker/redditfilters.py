@@ -307,8 +307,9 @@ def remove_thank_blocks(blocks):
         if block and not is_thank_block(block):
             yield block
 
+htmlparser = HTMLParser()
 def unescape_entities(text):
-    return HTMLParser.unescape.__func__(HTMLParser, text)
+    return htmlparser.unescape(text)
 
 repeat_re = re.compile("(?P<char>.)(?P=char){3,}")
 def reformat(body_):

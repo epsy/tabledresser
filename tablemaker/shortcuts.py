@@ -34,7 +34,8 @@ from tablemaker.redditfilters import (
     QandA_grab, QandA_formatter, QandA_sort_votecount,
     QandA_splitquestions, QandA_merge,
     links_from_body, remove_tracked,
-    iama_filter, verify_ama
+    iama_filter, verify_ama,
+    unescape_entities
     )
 from tablemaker.markdown.writers import table
 from tablemaker.redditapi import get_reddit, login, edit, submit, reddit_re
@@ -132,7 +133,7 @@ def post_table_comment(submission, table, tt, dry_run=False, cb=None):
             ratelimit(make_comment)
 
 def submissiontitle(parent):
-    title = parent.title
+    title = unescape_entities(parent.title)
     subreddit = parent.subreddit.display_name
     return u"[Table] {subreddit}{title}".format(
         title=title,
