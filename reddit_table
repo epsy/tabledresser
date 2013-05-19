@@ -123,13 +123,13 @@ def crawl(refuse_pm=False):
         sixhourly = TrackedTable.objects.sixhourly()
 
         if ongoing:
-            print("Scheduled update for ongoing submissions: ",
+            print("Scheduled update for ongoing submissions:",
                   ', '.join(tt.parent for tt in ongoing))
         if hourly:
-            print("Scheduled update for hourly submissions: ",
+            print("Scheduled update for hourly submissions:",
                   ', '.join(tt.parent for tt in hourly))
         if sixhourly:
-            print("Scheduled update for six-hourly submissions: ",
+            print("Scheduled update for six-hourly submissions:",
                   ', '.join(tt.parent for tt in sixhourly))
 
         for tt in chain(ongoing, hourly, sixhourly):

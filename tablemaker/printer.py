@@ -16,7 +16,7 @@ class ProxyFile(object):
 class Printer(object):
     def __init__(self, output=None, safe=False):
         self.output = output or sys.stdout
-        self.status = None
+        self.status_text = None
         self._status_printed = False
         self.safe = safe
 
@@ -31,10 +31,10 @@ class Printer(object):
         if text[-1] == '\n':
             self._print_status()
 
-    def new_status(self, text):
+    def status(self, text):
         self._clear_status()
         self._status_printed = False
-        self.status = text
+        self.status_text = text
         self._print_status()
 
     def _clear_status(self):
@@ -48,7 +48,7 @@ class Printer(object):
                 self.output.write(self.status)
                 self.output.flush()
             else:
-                print(self.status, file=self.output)
+                print(self.status_text, file=self.output)
             self._status_printed = True
 
 
