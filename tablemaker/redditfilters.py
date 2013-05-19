@@ -434,6 +434,7 @@ def iama_filter(submissions, age=2*60*60, comments=100):
         yield submission
 
 def verify_ama(submission):
+    return False
     sr = submission.subreddit
     mods = [redditor.name for redditor in sr.get_moderators()]
 

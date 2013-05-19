@@ -24,6 +24,8 @@ import sys
 from praw.errors import RateLimitExceeded
 from collections import namedtuple
 
+from tablemaker.printer import printer
+
 RedditAction = namedtuple('RedditAction', ('fn', 'args', 'kwargs', 'attempts', 'delay'))
 
 scheduler = sched.scheduler(time.time, time.sleep)
@@ -70,11 +72,11 @@ class RedditSubmitter:
                 elif ret:
                     print("Won't retry", fn.func_name)
             if not (self._queue or self.stop_when_empty):
-                print("Waiting for more submissions to process...")
+                printer.status("Waiting for more submissions to process...")
         if self._queue or not self.stop_when_empty:
             if self._queue:
                 delay = self._queue[0].delay
-                print("{0} submission(s) in queue".format(len(self._queue)))
+                printer.status("{0} submission(s) in queue".format(len(self._queue)))
             else:
                 delay = self.default_delay
             scheduler.enter(delay, 0, self.run, ())

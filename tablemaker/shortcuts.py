@@ -127,7 +127,9 @@ def post_table_comment(submission, table, tt, dry_run=False, cb=None):
                 else:
                     tt.comment = response.id
                     tt.save()
-                    print("Comment link:", tt.get_comment_url(submission.subreddit.display_name))
+                    print("Posted excerpt for {0}: {1}".format(
+                        tt.get_parent_url(), tt.get_comment_url(submission.subreddit.display_name)
+                        ))
                 if cb:
                     cb()
             ratelimit(make_comment)
@@ -187,7 +189,9 @@ def post_table_submission(submission, table, tt, dry_run=False, cb=None):
                     msg.getvalue())
                 tt.submission = link
                 tt.save()
-                print("Submission link:", tt.get_submission_url('tabled'))
+                print("Posted table for {0}: {1}".format(
+                    tt.get_parent_url(), tt.get_submission_url('tabled')
+                    ))
                 if cb:
                     cb()
             ratelimit(submit_to_tabled)

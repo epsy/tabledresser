@@ -93,12 +93,14 @@ def crawl(refuse_pm=False):
 
     from itertools import chain
 
+    from tablemaker.printer import printer
     from tablemaker.loop import run as runloop, rs, enter, ratelimit
     from tablemaker.redditapi import login
     from tablemaker_orm.models import TrackedTable
     from tablemaker.shortcuts import post_ama_from_loop, post_ama_from_pm, top_iama, read_messages
 
     rs.stop_when_empty = False
+    printer.install()
 
     login()
 
@@ -116,12 +118,21 @@ def crawl(refuse_pm=False):
             ratelimit(post_ama_from_loop, ama, trust=8, _delay=3)
 
     def update_existing():
-        for tt in chain(
-                TrackedTable.objects.ongoing(),
-                TrackedTable.objects.hourly(),
-                TrackedTable.objects.sixhourly()
-                ):
-            print("Will update", tt.get_parent_url())
+        ongoing = TrackedTable.objects.ongoing()
+        hourly = TrackedTable.objects.hourly()
+        sixhourly = TrackedTable.objects.sixhourly()
+
+        if ongoing:
+            print("Scheduled update for ongoing submissions: ",
+                  ', '.join(tt.parent for tt in ongoing))
+        if hourly:
+            print("Scheduled update for hourly submissions: ",
+                  ', '.join(tt.parent for tt in hourly))
+        if sixhourly:
+            print("Scheduled update for six-hourly submissions: ",
+                  ', '.join(tt.parent for tt in sixhourly))
+
+        for tt in chain(ongoing, hourly, sixhourly):
             ratelimit(post_ama_from_loop, tt.get_parent_url(), trust=9, _delay=3)
 
     def routine():
