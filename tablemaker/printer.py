@@ -45,7 +45,7 @@ class Printer(object):
     def _print_status(self):
         if self.status is not None and not self._status_printed:
             if self.safe:
-                self.output.write(self.status)
+                self.output.write(self.status_text)
                 self.output.flush()
             else:
                 print(self.status_text, file=self.output)
