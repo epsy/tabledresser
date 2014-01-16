@@ -65,11 +65,18 @@ def QandA_grab(submission, answers_from_usernames=None):
     else:
         answers_from_usernames = set(s.lower() for s in answers_from_usernames)
 
+    answer_parents = {}
+
     def _filter(parent, message):
         if (    parent and hasattr(message, 'replies') and
                 hasattr(parent.author, 'name') and
                 hasattr(message.author, 'name') and
                 message.author.name.lower() in answers_from_usernames):
+            if parent.author.name.lower() in answers_from_usernames:
+                if not parent.parent_id.startswith('t1_'):
+                    return
+                parent = answer_parents[parent.parent_id]
+            answer_parents[message.fullname] = parent
             parent.body = unescape_entities(parent.body)
             message.body = unescape_entities(message.body)
             return parent, message
