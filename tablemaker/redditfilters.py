@@ -75,7 +75,11 @@ def QandA_grab(submission, answers_from_usernames=None):
             if parent.author.name.lower() in answers_from_usernames:
                 if not parent.parent_id.startswith('t1_'):
                     return
-                parent = answer_parents[parent.fullname]
+                try:
+                    parent = answer_parents[parent.fullname]
+                except KeyError:
+                    return # we're in a chain of author comments
+                           # with no question
             answer_parents[message.fullname] = parent
             parent.body = unescape_entities(parent.body)
             message.body = unescape_entities(message.body)
