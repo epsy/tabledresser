@@ -123,9 +123,6 @@ def QandA_sort_votecount(iterable):
                 + 2 * len(message.body)
                 + log(abs(max(parent.score, 10))) * sign(parent.score)
                 )
-            print(len(parent.body))
-            print(len(message.body))
-            print(score, repr(parent.body[:60]))
         answers[message.fullname] = score
         return score
     return sorted(iterable, key=key_fn, reverse=True)
