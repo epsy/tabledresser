@@ -107,6 +107,9 @@ def QandA_merge(iterable):
         yield parent, (messages[0])
 
 
+def sign(i):
+    return abs(i) / i
+
 def QandA_sort_votecount(iterable):
     answers = {}
     def key_fn(x):
@@ -115,10 +118,14 @@ def QandA_sort_votecount(iterable):
             score = answers[parent.parent_id] - 1
         else:
             score = (
-                ((parent.ups - parent.downs) * 5 + message.ups + message.downs)
-                * log(len(message.body)) * message.ups
-                * log(2 ** parent.body.count('?'))
+                50 * min(2, parent.body.count('?'))
+                - len(parent.body)
+                + 2 * len(message.body)
+                + log(abs(max(parent.score, 10))) * sign(parent.score)
                 )
+            print(len(parent.body))
+            print(len(message.body))
+            print(score, repr(parent.body[:60]))
         answers[message.fullname] = score
         return score
     return sorted(iterable, key=key_fn, reverse=True)
