@@ -108,6 +108,8 @@ def QandA_merge(iterable):
 
 
 def sign(i):
+    if not i:
+        return 1
     return abs(i) / i
 
 def QandA_sort_votecount(iterable):
